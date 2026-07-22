@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: betzone
+    environment: docker-compose
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: api-gateway
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api-gateway:8080']
+        labels:
+          service: api-gateway
+
+  - job_name: auth-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['auth-service:3001']
+        labels:
+          service: auth-service
+
+  - job_name: wallet-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['wallet-service:3002']
+        labels:
+          service: wallet-service
+
+  - job_name: betting-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['betting-service:3003']
+        labels:
+          service: betting-service
+
+  - job_name: casino-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['casino-service:3004']
+        labels:
+          service: casino-service
+
+  - job_name: chat-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['chat-service:3005']
+        labels:
+          service: chat-service
+
+  - job_name: notifications-service
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['notifications-service:3006']
+        labels:
+          service: notifications-service

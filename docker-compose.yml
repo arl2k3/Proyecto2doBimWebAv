@@ -1,0 +1,440 @@
+name: betzone
+
+x-backend-env: &backend-env
+  NODE_ENV: ${NODE_ENV:-production}
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+  INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+  RABBITMQ_URL: ${RABBITMQ_URL}
+  DEFAULT_USER_BALANCE: ${DEFAULT_USER_BALANCE:-1000.00}
+  APP_URL: ${APP_URL:-http://localhost:8080}
+
+x-node-healthcheck: &node-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 5
+  start_period: 40s
+
+services:
+  # ─── Databases ───────────────────────────────────────────
+  auth-db:
+    image: postgres:16-alpine
+    container_name: betzone-auth-db
+    environment:
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+      - ./scripts/database/init-extensions.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  wallet-db:
+    image: postgres:16-alpine
+    container_name: betzone-wallet-db
+    environment:
+      POSTGRES_USER: ${WALLET_DB_USER}
+      POSTGRES_PASSWORD: ${WALLET_DB_PASS}
+      POSTGRES_DB: ${WALLET_DB_NAME}
+    volumes:
+      - wallet-db-data:/var/lib/postgresql/data
+      - ./scripts/database/init-extensions.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${WALLET_DB_USER} -d ${WALLET_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  betting-db:
+    image: postgres:16-alpine
+    container_name: betzone-betting-db
+    environment:
+      POSTGRES_USER: ${BETTING_DB_USER}
+      POSTGRES_PASSWORD: ${BETTING_DB_PASS}
+      POSTGRES_DB: ${BETTING_DB_NAME}
+    volumes:
+      - betting-db-data:/var/lib/postgresql/data
+      - ./scripts/database/init-extensions.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BETTING_DB_USER} -d ${BETTING_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  casino-db:
+    image: postgres:16-alpine
+    container_name: betzone-casino-db
+    environment:
+      POSTGRES_USER: ${CASINO_DB_USER}
+      POSTGRES_PASSWORD: ${CASINO_DB_PASS}
+      POSTGRES_DB: ${CASINO_DB_NAME}
+    volumes:
+      - casino-db-data:/var/lib/postgresql/data
+      - ./scripts/database/init-extensions.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CASINO_DB_USER} -d ${CASINO_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  chat-db:
+    image: postgres:16-alpine
+    container_name: betzone-chat-db
+    environment:
+      POSTGRES_USER: ${CHAT_DB_USER}
+      POSTGRES_PASSWORD: ${CHAT_DB_PASS}
+      POSTGRES_DB: ${CHAT_DB_NAME}
+    volumes:
+      - chat-db-data:/var/lib/postgresql/data
+      - ./scripts/database/init-extensions.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CHAT_DB_USER} -d ${CHAT_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # ─── Message Broker ────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: betzone-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: betzone
+      RABBITMQ_DEFAULT_PASS: betzone_secret
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ─── Backend Services ────────────────────────────────────
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    container_name: betzone-auth-service
+    environment:
+      <<: *backend-env
+      AUTH_PORT: ${AUTH_PORT:-3001}
+      AUTH_DB_HOST: auth-db
+      AUTH_DB_PORT: ${AUTH_DB_PORT:-5432}
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASS: ${AUTH_DB_PASS}
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:${NOTIFICATIONS_PORT:-3006}
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  wallet-service:
+    build:
+      context: ./backend
+      dockerfile: wallet-service/Dockerfile
+    container_name: betzone-wallet-service
+    environment:
+      <<: *backend-env
+      WALLET_PORT: ${WALLET_PORT:-3002}
+      WALLET_DB_HOST: wallet-db
+      WALLET_DB_PORT: ${WALLET_DB_PORT:-5432}
+      WALLET_DB_USER: ${WALLET_DB_USER}
+      WALLET_DB_PASS: ${WALLET_DB_PASS}
+      WALLET_DB_NAME: ${WALLET_DB_NAME}
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  betting-service:
+    build:
+      context: ./backend
+      dockerfile: betting-service/Dockerfile
+    container_name: betzone-betting-service
+    environment:
+      <<: *backend-env
+      BETTING_PORT: ${BETTING_PORT:-3003}
+      BETTING_DB_HOST: betting-db
+      BETTING_DB_PORT: ${BETTING_DB_PORT:-5432}
+      BETTING_DB_USER: ${BETTING_DB_USER}
+      BETTING_DB_PASS: ${BETTING_DB_PASS}
+      BETTING_DB_NAME: ${BETTING_DB_NAME}
+      WALLET_SERVICE_URL: http://wallet-service:${WALLET_PORT:-3002}
+    depends_on:
+      betting-db:
+        condition: service_healthy
+      wallet-service:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  casino-service:
+    build:
+      context: ./backend
+      dockerfile: casino-service/Dockerfile
+    container_name: betzone-casino-service
+    environment:
+      <<: *backend-env
+      CASINO_PORT: ${CASINO_PORT:-3004}
+      CASINO_DB_HOST: casino-db
+      CASINO_DB_PORT: ${CASINO_DB_PORT:-5432}
+      CASINO_DB_USER: ${CASINO_DB_USER}
+      CASINO_DB_PASS: ${CASINO_DB_PASS}
+      CASINO_DB_NAME: ${CASINO_DB_NAME}
+      WALLET_SERVICE_URL: http://wallet-service:${WALLET_PORT:-3002}
+    depends_on:
+      casino-db:
+        condition: service_healthy
+      wallet-service:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  chat-service:
+    build:
+      context: ./backend
+      dockerfile: chat-service/Dockerfile
+    container_name: betzone-chat-service
+    environment:
+      <<: *backend-env
+      CHAT_PORT: ${CHAT_PORT:-3005}
+      CHAT_DB_HOST: chat-db
+      CHAT_DB_PORT: ${CHAT_DB_PORT:-5432}
+      CHAT_DB_USER: ${CHAT_DB_USER}
+      CHAT_DB_PASS: ${CHAT_DB_PASS}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+    depends_on:
+      chat-db:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3005/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  notifications-service:
+    build:
+      context: ./backend
+      dockerfile: notifications-service/Dockerfile
+    container_name: betzone-notifications-service
+    environment:
+      <<: *backend-env
+      NOTIFICATIONS_PORT: ${NOTIFICATIONS_PORT:-3006}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3006/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
+    container_name: betzone-api-gateway
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      <<: *backend-env
+      GATEWAY_PORT: ${GATEWAY_PORT:-8080}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      AUTH_SERVICE_URL: http://auth-service:${AUTH_PORT:-3001}
+      WALLET_SERVICE_URL: http://wallet-service:${WALLET_PORT:-3002}
+      BETTING_SERVICE_URL: http://betting-service:${BETTING_PORT:-3003}
+      CASINO_SERVICE_URL: http://casino-service:${CASINO_PORT:-3004}
+      CHAT_SERVICE_URL: http://chat-service:${CHAT_PORT:-3005}
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:${NOTIFICATIONS_PORT:-3006}
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      wallet-service:
+        condition: service_healthy
+      betting-service:
+        condition: service_healthy
+      casino-service:
+        condition: service_healthy
+      chat-service:
+        condition: service_healthy
+      notifications-service:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      <<: *node-healthcheck
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+    restart: unless-stopped
+
+  # ─── Frontend ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        API_URL: ${API_URL:-http://localhost:8080}
+    container_name: betzone-frontend
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ─── Observability ───────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: betzone-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: betzone-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./infrastructure/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - betzone-internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3100/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: betzone-promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./infrastructure/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - betzone-internal
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: betzone-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - betzone-internal
+    restart: unless-stopped
+
+networks:
+  betzone-internal:
+    driver: bridge
+    name: betzone-internal
+
+volumes:
+  auth-db-data:
+  wallet-db-data:
+  betting-db-data:
+  casino-db-data:
+  chat-db-data:
+  rabbitmq-data:
+  prometheus-data:
+  loki-data:
+  grafana-data:

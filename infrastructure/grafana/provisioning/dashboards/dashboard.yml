@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: BetZone
+    orgId: 1
+    folder: BetZone
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

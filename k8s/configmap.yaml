@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: betzone-config
+  namespace: betzone
+  labels:
+    app.kubernetes.io/name: betzone
+data:
+  NODE_ENV: production
+  GATEWAY_PORT: "8080"
+  AUTH_PORT: "3001"
+  WALLET_PORT: "3002"
+  BETTING_PORT: "3003"
+  CASINO_PORT: "3004"
+  CHAT_PORT: "3005"
+  NOTIFICATIONS_PORT: "3006"
+  FRONTEND_PORT: "80"
+  JWT_EXPIRES_IN: 24h
+  DEFAULT_USER_BALANCE: "1000.00"
+  APP_URL: http://betzone.local
+  API_URL: http://betzone.local/api
+  CORS_ORIGIN: "*"
+  AUTH_DB_HOST: auth-db
+  AUTH_DB_PORT: "5432"
+  AUTH_DB_NAME: auth_db
+  WALLET_DB_HOST: wallet-db
+  WALLET_DB_PORT: "5432"
+  WALLET_DB_NAME: wallet_db
+  BETTING_DB_HOST: betting-db
+  BETTING_DB_PORT: "5432"
+  BETTING_DB_NAME: betting_db
+  CASINO_DB_HOST: casino-db
+  CASINO_DB_PORT: "5432"
+  CASINO_DB_NAME: casino_db
+  CHAT_DB_HOST: chat-db
+  CHAT_DB_PORT: "5432"
+  CHAT_DB_NAME: chat_db
+  AUTH_SERVICE_URL: http://auth-service:3001
+  WALLET_SERVICE_URL: http://wallet-service:3002
+  BETTING_SERVICE_URL: http://betting-service:3003
+  CASINO_SERVICE_URL: http://casino-service:3004
+  CHAT_SERVICE_URL: http://chat-service:3005
+  NOTIFICATIONS_SERVICE_URL: http://notifications-service:3006
+  RABBITMQ_URL: amqp://betzone:betzone_secret@rabbitmq:5672
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  SMTP_FROM: BetZone <noreply@betzone.com>
+  GOOGLE_CALLBACK_URL: http://betzone.local/api/auth/google/callback
+  GRAFANA_ADMIN_USER: admin

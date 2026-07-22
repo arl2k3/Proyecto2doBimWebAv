@@ -1,0 +1,374 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: betzone
+data:
+  init-extensions.sql: |
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: auth-db
+  namespace: betzone
+spec:
+  serviceName: auth-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-db
+  template:
+    metadata:
+      labels:
+        app: auth-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: AUTH_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: AUTH_DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: betzone-config
+                  key: AUTH_DB_NAME
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "betzone", "-d", "auth_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-db
+  namespace: betzone
+spec:
+  clusterIP: None
+  selector:
+    app: auth-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wallet-db
+  namespace: betzone
+spec:
+  serviceName: wallet-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wallet-db
+  template:
+    metadata:
+      labels:
+        app: wallet-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: WALLET_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: WALLET_DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: betzone-config
+                  key: WALLET_DB_NAME
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "betzone", "-d", "wallet_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wallet-db
+  namespace: betzone
+spec:
+  clusterIP: None
+  selector:
+    app: wallet-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: betting-db
+  namespace: betzone
+spec:
+  serviceName: betting-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: betting-db
+  template:
+    metadata:
+      labels:
+        app: betting-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: BETTING_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: BETTING_DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: betzone-config
+                  key: BETTING_DB_NAME
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "betzone", "-d", "betting_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: betting-db
+  namespace: betzone
+spec:
+  clusterIP: None
+  selector:
+    app: betting-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: casino-db
+  namespace: betzone
+spec:
+  serviceName: casino-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: casino-db
+  template:
+    metadata:
+      labels:
+        app: casino-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: CASINO_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: CASINO_DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: betzone-config
+                  key: CASINO_DB_NAME
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "betzone", "-d", "casino_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: casino-db
+  namespace: betzone
+spec:
+  clusterIP: None
+  selector:
+    app: casino-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chat-db
+  namespace: betzone
+spec:
+  serviceName: chat-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-db
+  template:
+    metadata:
+      labels:
+        app: chat-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: CHAT_DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: betzone-secrets
+                  key: CHAT_DB_PASS
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: betzone-config
+                  key: CHAT_DB_NAME
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "betzone", "-d", "chat_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-db
+  namespace: betzone
+spec:
+  clusterIP: None
+  selector:
+    app: chat-db
+  ports:
+    - port: 5432
+      targetPort: 5432
