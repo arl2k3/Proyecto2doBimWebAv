@@ -1,0 +1,192 @@
+.mines-page {
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.balance-bar {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+
+  strong {
+    color: #4ade80;
+    font-size: 1.125rem;
+  }
+}
+
+.error-toast {
+  background: rgba(127, 29, 29, 0.8);
+  color: #fca5a5;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.result-banner {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  border: 2px solid;
+  margin-bottom: 1rem;
+
+  &.won { background: rgba(20, 83, 45, 0.6); border-color: #22c55e; color: #86efac; }
+  &.lost { background: rgba(127, 29, 29, 0.6); border-color: #ef4444; color: #fca5a5; }
+}
+
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+
+  strong { color: white; }
+  .multiplier { color: #60a5fa; font-weight: 800; font-size: 1.125rem; }
+  .potential { color: #4ade80; font-weight: 700; }
+}
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  max-width: 420px;
+  margin: 0 auto 1.5rem;
+}
+
+.mine-cell {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  border: 2px solid #334155;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+  cursor: pointer;
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  user-select: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+
+  &:not(.disabled):hover {
+    border-color: #3b82f6;
+    transform: translateY(-4px) scale(1.05);
+  }
+
+  &.safe {
+    background: radial-gradient(circle at center, #059669 0%, #14532d 100%);
+    border-color: #10b981;
+    animation: popInSafe 0.35s ease;
+  }
+
+  &.mine {
+    background: radial-gradient(circle at center, #dc2626 0%, #7f1d1d 100%);
+    border-color: #f87171;
+    animation: popInExplosion 0.5s ease infinite alternate;
+  }
+
+  &.revealed-mine {
+    background: radial-gradient(circle at center, #374151 0%, #1f2937 100%);
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+  }
+}
+
+.grid-shake {
+  animation: gridShake 0.5s ease;
+}
+
+@keyframes popInSafe {
+  0% { transform: scale(0.3) rotate(-15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes popInExplosion {
+  0% { transform: scale(0.8); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes gridShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+
+.setup-panel {
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+
+  h3 { margin: 0 0 1rem; }
+}
+
+.quick-bets {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.mine-selector {
+  margin: 1rem 0;
+
+  .label {
+    display: block;
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.mine-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.mine-option {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  background: #1e293b;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: #1d4ed8; }
+  &.active { background: #2563eb; border-color: #60a5fa; }
+}
+
+.start-btn,
+.cashout-btn,
+.new-game-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+}
+
+.cashout-btn {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+.history h3 { margin: 0 0 1rem; }
+.empty { text-align: center; color: #64748b; padding: 1.5rem; }
+.status-cashed_out { color: #4ade80; }
+.status-exploded { color: #f87171; }
+.payout { color: #4ade80; }
+.date { color: #94a3b8; }

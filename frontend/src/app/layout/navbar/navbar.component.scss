@@ -1,0 +1,123 @@
+.navbar {
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.navbar-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-icon {
+  font-size: 1.5rem;
+}
+
+.brand-title {
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: #3b82f6;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.brand-sub {
+  font-size: 0.625rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+
+  a {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.15s;
+
+    &:hover,
+    &.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+  }
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  text-align: right;
+}
+
+.username {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.role {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.balance-box {
+  background: #334155;
+  border: 1px solid #475569;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.balance-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.balance-value {
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.logout-btn {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+}

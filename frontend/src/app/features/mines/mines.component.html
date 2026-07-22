@@ -1,0 +1,107 @@
+<app-navbar />
+
+<main class="mines-page">
+  <div class="game-area card">
+    <div class="balance-bar">
+      Saldo: <strong>${{ (user()?.balance ?? 0) | number: '1.2-2' }}</strong>
+    </div>
+
+    @if (error) {
+      <div class="error-toast">{{ error }}</div>
+    }
+
+    @if (resultBanner) {
+      <div class="result-banner" [class]="resultCss">{{ resultBanner }}</div>
+    }
+
+    @if (showStats) {
+      <div class="stats-bar">
+        <span>Apuesta: <strong>${{ currentBet | number: '1.2-2' }}</strong></span>
+        <span>Minas: <strong>{{ minesCount }}</strong></span>
+        <span>Seguras: <strong>{{ safeRevealed }}</strong></span>
+        <span class="multiplier">{{ multiplier | number: '1.2-2' }}x</span>
+        <span class="potential">Ganancia: ${{ potentialWin | number: '1.2-2' }}</span>
+      </div>
+    }
+
+    <div class="mines-grid" [class.grid-shake]="gridShaking">
+      @for (cell of grid; track cell.index) {
+        <button
+          class="mine-cell"
+          [class.safe]="cell.state === 'safe'"
+          [class.mine]="cell.state === 'mine'"
+          [class.revealed-mine]="cell.state === 'revealed-mine'"
+          [class.disabled]="cell.state === 'disabled' || cell.state === 'safe' || cell.state === 'mine' || cell.state === 'revealed-mine'"
+          [disabled]="!gameActive || cell.state !== 'hidden'"
+          (click)="revealCell(cell.index)">
+          {{ cellEmoji(cell.state) }}
+        </button>
+      }
+    </div>
+
+    @if (showSetup) {
+      <div class="setup-panel">
+        <h3>Configura tu partida</h3>
+        <div class="quick-bets">
+          <button class="btn btn-secondary" (click)="setBet(5)">$5</button>
+          <button class="btn btn-secondary" (click)="setBet(10)">$10</button>
+          <button class="btn btn-secondary" (click)="setBet(25)">$25</button>
+          <button class="btn btn-secondary" (click)="setBet(50)">$50</button>
+        </div>
+        <input type="number" class="form-input" [(ngModel)]="betAmount" placeholder="Apuesta" />
+        <div class="mine-selector">
+          <span class="label">Número de minas:</span>
+          <div class="mine-options">
+            @for (n of mineOptions; track n) {
+              <button
+                class="mine-option"
+                [class.active]="minesCount === n"
+                (click)="selectMines(n)">
+                {{ n }}
+              </button>
+            }
+          </div>
+        </div>
+        <button class="btn btn-primary start-btn" (click)="startGame()">Iniciar 💣</button>
+      </div>
+    }
+
+    @if (showCashout) {
+      <button class="btn btn-success cashout-btn" (click)="cashOut()">💰 Cobrar ({{ multiplier | number: '1.2-2' }}x)</button>
+    }
+
+    @if (showNewGame) {
+      <button class="btn btn-primary new-game-btn" (click)="newGame()">Nueva Partida</button>
+    }
+  </div>
+
+  <section class="history card">
+    <h3>Historial</h3>
+    @if (history.length === 0) {
+      <p class="empty">Sin historial aún.</p>
+    } @else {
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Apuesta</th>
+            <th>Minas</th>
+            <th>Resultado</th>
+            <th>Pago</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (g of history; track $index) {
+            <tr>
+              <td>${{ g.bet | number: '1.2-2' }}</td>
+              <td>{{ g.minesCount ?? g.mines_count }}</td>
+              <td [class]="'status-' + g.status">{{ statusLabel(g.status) }}</td>
+              <td class="payout">${{ (g.payout ?? 0) | number: '1.2-2' }}</td>
+              <td class="date">{{ g.createdAt | date: 'shortDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</main>

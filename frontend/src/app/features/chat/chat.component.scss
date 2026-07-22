@@ -1,0 +1,256 @@
+.chat-page {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  height: calc(100vh - 80px);
+}
+
+.rooms-sidebar {
+  width: 25%;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 1rem;
+  }
+}
+
+.rooms-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+.room-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #cbd5e1;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.15s;
+
+  &:hover {
+    background: #334155;
+  }
+
+  &.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    font-weight: 700;
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+}
+
+.active-badge {
+  font-size: 0.75rem;
+  background: #020617;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-weight: 400;
+}
+
+.rooms-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #334155;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #334155;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    color: #60a5fa;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+
+  &.connected {
+    color: #4ade80;
+
+    .status-dot {
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &.error .status-dot {
+    animation: ping 1s infinite;
+  }
+}
+
+.status-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes ping {
+  0% { transform: scale(1); opacity: 1; }
+  75%, 100% { transform: scale(1.5); opacity: 0; }
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  min-height: 0;
+}
+
+.loading-msg,
+.empty-msg {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.75rem;
+  padding: 2.5rem;
+}
+
+.sys-message {
+  text-align: center;
+  font-size: 0.6875rem;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  color: #94a3b8;
+  align-self: center;
+}
+
+.sys-time {
+  opacity: 0.4;
+  font-style: italic;
+  margin-left: 0.25rem;
+}
+
+.message {
+  max-width: 60%;
+  padding: 1rem;
+  border-radius: 1rem;
+  border-top-left-radius: 0;
+  background: #334155;
+  border: 1px solid #475569;
+  align-self: flex-start;
+
+  &.mine {
+    align-self: flex-end;
+    background: #2563eb;
+    color: white;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 0;
+    border: none;
+  }
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.author {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #60a5fa;
+}
+
+.mine .author {
+  color: #bfdbfe;
+}
+
+.role-badge {
+  font-size: 0.5625rem;
+  opacity: 0.6;
+}
+
+.time {
+  font-size: 0.5625rem;
+  opacity: 0.6;
+}
+
+.message-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #334155;
+
+  .form-input {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .chat-page {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .rooms-sidebar {
+    width: 100%;
+  }
+}

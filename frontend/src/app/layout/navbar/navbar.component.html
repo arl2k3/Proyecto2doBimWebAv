@@ -1,0 +1,33 @@
+<header class="navbar">
+  <div class="navbar-inner">
+    <div class="brand">
+      <span class="brand-icon">🏆</span>
+      <a routerLink="/dashboard" class="brand-title">
+        BETZONE <span class="brand-sub">MICROSERVICES</span>
+      </a>
+    </div>
+
+    @if (showNav) {
+      <nav class="nav-links">
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/chat" routerLinkActive="active">Chat</a>
+        <a routerLink="/blackjack" routerLinkActive="active">Blackjack</a>
+        <a routerLink="/mines" routerLinkActive="active">Mines</a>
+      </nav>
+    }
+
+    <div class="user-section">
+      @if (user(); as u) {
+        <div class="user-info">
+          <p class="username">{{ u.username }}</p>
+          <p class="role">Rol: {{ u.role }}</p>
+        </div>
+        <div class="balance-box">
+          <span class="balance-label">Saldo:</span>
+          <span class="balance-value">${{ (u.balance ?? 0) | number: '1.2-2' }}</span>
+        </div>
+        <button class="btn btn-danger logout-btn" (click)="logout()">Cerrar Sesión</button>
+      }
+    </div>
+  </div>
+</header>

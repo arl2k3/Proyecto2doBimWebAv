@@ -1,0 +1,122 @@
+<app-navbar />
+
+<main class="blackjack-page">
+  <div class="game-area card">
+    <div class="balance-bar">
+      <span>Saldo: <strong class="balance">${{ (user()?.balance ?? 0) | number: '1.2-2' }}</strong></span>
+    </div>
+
+    @if (error) {
+      <div class="error-toast">{{ error }}</div>
+    }
+
+    @if (resultBanner) {
+      <div class="result-banner" [class]="resultCss">{{ resultBanner }}</div>
+    }
+
+    <div class="table-felt">
+      <div class="hand dealer-hand">
+        <h4>Dealer <span class="score">{{ game?.dealerScore ?? 0 }}</span></h4>
+        <div class="cards">
+          @for (card of game?.dealerCards ?? []; track $index) {
+            <div class="bj-card" [class]="cardClass(card)">
+              @if (card.value !== '?') {
+                <span>{{ card.value }}</span>
+                <span class="suit-icon">{{ suitSymbol(card) }}</span>
+              } @else {
+                <span>?</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="hand player-hand">
+        <h4>Jugador <span class="score">{{ game?.playerScore ?? 0 }}</span></h4>
+        @if (isSplit()) {
+          <div class="split-container">
+            @for (hand of getSplitHands(); track $index) {
+              <div class="split-hand" [class.active-hand]="$index === getActiveHandIndex()">
+                <span class="hand-label">Mano {{ $index + 1 }}</span>
+                <div class="cards">
+                  @for (card of hand; track $index) {
+                    <div class="bj-card" [class]="cardClass(card)">
+                      <span>{{ card.value }}</span>
+                      <span class="suit-icon">{{ suitSymbol(card) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="cards">
+            @for (card of getPlayerCards(); track $index) {
+              <div class="bj-card" [class]="cardClass(card)">
+                <span>{{ card.value }}</span>
+                <span class="suit-icon">{{ suitSymbol(card) }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (showBetPanel) {
+      <div class="bet-panel">
+        <h3>Coloca tu apuesta</h3>
+        <div class="quick-bets">
+          <button class="btn btn-secondary" (click)="setBet(10)">$10</button>
+          <button class="btn btn-secondary" (click)="setBet(25)">$25</button>
+          <button class="btn btn-secondary" (click)="setBet(50)">$50</button>
+          <button class="btn btn-secondary" (click)="setBet(100)">$100</button>
+        </div>
+        <input type="number" class="form-input" [(ngModel)]="betAmount" />
+        <button class="btn btn-primary deal-btn" (click)="startGame()">Repartir 🃏</button>
+      </div>
+    }
+
+    @if (showActionPanel) {
+      <div class="action-panel">
+        <button class="btn btn-primary" (click)="hit()" [disabled]="actionLoading">Hit</button>
+        <button class="btn btn-secondary" (click)="stand()" [disabled]="actionLoading">Stand</button>
+        <button class="btn btn-secondary" (click)="double()" [disabled]="actionLoading || !game?.canDouble">Double</button>
+        @if (game?.canSplit) {
+          <button class="btn btn-secondary" (click)="split()" [disabled]="actionLoading">Split 🃏✂️</button>
+        }
+      </div>
+    }
+
+    @if (showNewGameBtn) {
+      <button class="btn btn-primary new-game-btn" (click)="newGame()">Nueva Partida</button>
+    }
+  </div>
+
+  <section class="history card">
+    <h3>Historial</h3>
+    @if (history.length === 0) {
+      <p class="empty">Sin historial aún.</p>
+    } @else {
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Apuesta</th>
+            <th>Resultado</th>
+            <th>Pago</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (g of history; track $index) {
+            <tr>
+              <td>${{ g.bet | number: '1.2-2' }}</td>
+              <td [class]="'status-' + g.status">{{ statusLabel(g.status) }}</td>
+              <td class="payout">${{ (g.payout ?? 0) | number: '1.2-2' }}</td>
+              <td class="date">{{ g.createdAt | date: 'shortDate' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</main>

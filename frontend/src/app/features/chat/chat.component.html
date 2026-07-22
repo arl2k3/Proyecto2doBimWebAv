@@ -1,0 +1,78 @@
+<app-navbar />
+
+<main class="chat-page">
+  <aside class="rooms-sidebar card">
+    <h3>Salas de Chat</h3>
+    <div class="rooms-list">
+      @for (room of rooms; track room.id) {
+        <button
+          class="room-btn"
+          [class.active]="activeRoom === room.id"
+          (click)="switchRoom(room.id)">
+          <span>{{ room.icon }} {{ room.title }}</span>
+          @if (activeRoom === room.id) {
+            <span class="active-badge">Activa</span>
+          }
+        </button>
+      }
+    </div>
+    <p class="rooms-footer">Conexión encriptada mediante WebSockets firmados.</p>
+  </aside>
+
+  <section class="chat-main card">
+    <div class="chat-header">
+      <div>
+        <h2># {{ activeRoomInfo.title }}</h2>
+        <p>{{ activeRoomInfo.description }}</p>
+      </div>
+      <div class="connection" [class.connected]="connectionStatus === 'connected'" [class.error]="connectionStatus === 'error'">
+        <span class="status-dot"></span>
+        @if (connectionStatus === 'connected') {
+          <span>Conectado (En Vivo)</span>
+        } @else if (connectionStatus === 'error') {
+          <span>Fallo de Red</span>
+        } @else {
+          <span>Desconectado</span>
+        }
+      </div>
+    </div>
+
+    <div class="messages" #messagesContainer>
+      @if (loading) {
+        <p class="loading-msg">Cargando historial de esta sala...</p>
+      } @else if (messages.length === 0 && systemMessages.length === 0) {
+        <p class="empty-msg">No hay mensajes anteriores. ¡Sé el primero en iniciar la conversación!</p>
+      }
+
+      @for (sys of systemMessages; track $index) {
+        <div class="sys-message">
+          📢 <b>Sistema:</b> {{ sys.text }}
+          <span class="sys-time">{{ sys.timestamp | date: 'shortTime' }}</span>
+        </div>
+      }
+
+      @for (msg of messages; track msg.id ?? $index) {
+        <div class="message" [class.mine]="isMyMessage(msg)">
+          <div class="message-header">
+            <span class="author">
+              {{ msg.user.username }}
+              @if (msg.user.role === 'admin') { <span class="role-badge">👑 Admin</span> }
+            </span>
+            <span class="time">{{ msg.createdAt | date: 'shortTime' }}</span>
+          </div>
+          <p class="message-text">{{ msg.message }}</p>
+        </div>
+      }
+    </div>
+
+    <form class="chat-form" (ngSubmit)="sendMessage()">
+      <input
+        class="form-input"
+        [(ngModel)]="messageText"
+        name="message"
+        placeholder="Escribe tu mensaje..."
+        autocomplete="off" />
+      <button type="submit" class="btn btn-primary" [disabled]="connectionStatus !== 'connected'">Enviar</button>
+    </form>
+  </section>
+</main>

@@ -1,0 +1,298 @@
+<app-navbar />
+
+<main class="dashboard">
+  <div class="dashboard-grid">
+    <aside class="sidebar">
+      <section class="card wallet-card">
+        <h3>💳 Monedero Virtual</h3>
+        <p class="hint">Recarga dinero de prueba en tu cuenta instantáneamente.</p>
+        <div class="quick-recharge">
+          <button class="btn btn-secondary" (click)="recharge(50)">+$50</button>
+          <button class="btn btn-secondary" (click)="recharge(100)">+$100</button>
+          <button class="btn btn-secondary" (click)="recharge(500)">+$500</button>
+        </div>
+        <div class="custom-recharge">
+          <input type="number" class="form-input" [(ngModel)]="customRecharge" placeholder="Monto personalizado" />
+          <button class="btn btn-success" (click)="rechargeCustom()">Cargar</button>
+        </div>
+      </section>
+
+      <section class="card link-card">
+        <h3>💬 Foro General Realtime</h3>
+        <p class="hint">Conéctate a la comunidad vía Socket.io.</p>
+        <a routerLink="/chat" class="btn btn-primary link-btn">Ingresar al Chat Room →</a>
+      </section>
+
+      <section class="card link-card">
+        <h3>🃏 Blackjack</h3>
+        <p class="hint">Juega Blackjack contra el dealer. Logra 21 para ganar.</p>
+        <a routerLink="/blackjack" class="btn btn-success link-btn">Jugar Blackjack →</a>
+      </section>
+
+      <section class="card link-card">
+        <h3>💣 Mines</h3>
+        <p class="hint">Evita las minas y cobra antes de explotar.</p>
+        <a routerLink="/mines" class="btn btn-primary link-btn">Jugar Mines →</a>
+      </section>
+
+      @if (isAdmin()) {
+        <section class="card admin-card">
+          <h3>⚙️ Panel Admin — Crear Evento Deportivo</h3>
+          <form (ngSubmit)="createEvent()" class="admin-form">
+            <div class="form-field">
+              <label class="field-label">Título del partido</label>
+              <input class="form-input" [(ngModel)]="newEvent.title" name="title" placeholder="Real Madrid vs Bayern Múnich" required />
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">Fecha y hora del partido</label>
+              <div class="datetime-parts">
+                <input type="number" min="1" max="31" class="form-input dt-input" [(ngModel)]="newEventDate.day" name="dtDay" placeholder="DD" />
+                <span class="dt-sep">/</span>
+                <input type="number" min="1" max="12" class="form-input dt-input" [(ngModel)]="newEventDate.month" name="dtMonth" placeholder="MM" />
+                <span class="dt-sep">/</span>
+                <input type="number" min="2024" max="2100" class="form-input dt-input dt-year" [(ngModel)]="newEventDate.year" name="dtYear" placeholder="AAAA" />
+                <span class="dt-sep dt-gap"></span>
+                <input type="number" min="0" max="23" class="form-input dt-input" [(ngModel)]="newEventDate.hour" name="dtHour" placeholder="HH" />
+                <span class="dt-sep">:</span>
+                <input type="number" min="0" max="59" class="form-input dt-input" [(ngModel)]="newEventDate.minute" name="dtMinute" placeholder="mm" />
+              </div>
+            </div>
+
+            <span class="field-label odds-title">Cuotas (Odds)</span>
+            <div class="odds-row">
+              <div class="odds-field">
+                <label class="odds-label">Local (Home)</label>
+                <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="newEvent.oddsHome" name="oddsHome" placeholder="1.85" />
+              </div>
+              <div class="odds-field">
+                <label class="odds-label">Empate (Draw)</label>
+                <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="newEvent.oddsDraw" name="oddsDraw" placeholder="3.40" />
+              </div>
+              <div class="odds-field">
+                <label class="odds-label">Visitante (Away)</label>
+                <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="newEvent.oddsAway" name="oddsAway" placeholder="2.10" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Crear Evento</button>
+          </form>
+        </section>
+      }
+    </aside>
+
+    <div class="main-content">
+      <section class="card events-section">
+        <div class="section-header">
+          <h2>📋 Cartelera de Partidos</h2>
+          <select class="form-input filter-select" [(ngModel)]="statusFilter" (change)="loadEvents()">
+            <option value="active">Activos</option>
+            <option value="completed">Finalizados</option>
+            <option value="all">Todos</option>
+          </select>
+        </div>
+
+        @if (loadingEvents) {
+          <p class="empty-state">Cargando partidos...</p>
+        } @else if (eventsError) {
+          <p class="error-state">{{ eventsError }}</p>
+        } @else if (events.length === 0) {
+          <p class="empty-state">No hay partidos disponibles bajo el filtro seleccionado.</p>
+        } @else {
+          <div class="events-grid">
+            @for (event of events; track event.id) {
+              <div class="event-card" [class.completed]="event.status === 'completed'">
+                <div class="event-header">
+                  <span class="event-date">📅 {{ (event.eventDate || event.createdAt) | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  <span class="badge" [class.badge-active]="event.status === 'active'">{{ event.status }}</span>
+                </div>
+                <h4 class="event-title">{{ event.title }}</h4>
+                @if (event.status === 'completed' && event.winner) {
+                  <div class="winner-badge">Ganador: <strong>{{ event.winner | uppercase }}</strong></div>
+                }
+                <div class="odds-grid">
+                  <button [disabled]="event.status !== 'active'" (click)="openBetModal(event, 'home')" class="odds-btn">
+                    <span>Local</span>
+                    <strong>{{ event.oddsHome | number: '1.2-2' }}</strong>
+                  </button>
+                  <button [disabled]="event.status !== 'active'" (click)="openBetModal(event, 'draw')" class="odds-btn">
+                    <span>Empate</span>
+                    <strong>{{ event.oddsDraw | number: '1.2-2' }}</strong>
+                  </button>
+                  <button [disabled]="event.status !== 'active'" (click)="openBetModal(event, 'away')" class="odds-btn">
+                    <span>Visitante</span>
+                    <strong>{{ event.oddsAway | number: '1.2-2' }}</strong>
+                  </button>
+                </div>
+                @if (isAdmin() && event.status === 'active') {
+                  <div class="admin-actions">
+                    <span class="admin-label">Cerrar partido:</span>
+                    <button class="btn-resolve home" (click)="resolveEvent(event.id, 'home')">Gana Local</button>
+                    <button class="btn-resolve away" (click)="resolveEvent(event.id, 'away')">Gana Visitante</button>
+                    <button class="btn-resolve draw" (click)="resolveEvent(event.id, 'draw')">Empate</button>
+                  </div>
+                  <div class="admin-actions">
+                    <span class="admin-label">Edición:</span>
+                    <button class="btn-edit" (click)="openEditEvent(event)">Editar</button>
+                    <button class="btn-delete" (click)="deleteEvent(event.id)">Eliminar</button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="card bets-section">
+        <h2>📊 Historial de Apuestas</h2>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Partido</th>
+                <th>Monto</th>
+                <th>Predicción</th>
+                <th>Cuota</th>
+                <th>Estado</th>
+                <th>Ganancia</th>
+                @if (isAdmin()) { <th>Acciones</th> }
+              </tr>
+            </thead>
+            <tbody>
+              @if (bets.length === 0) {
+                <tr>
+                  <td [attr.colspan]="isAdmin() ? 7 : 6" class="empty-cell">No has colocado ninguna apuesta aún.</td>
+                </tr>
+              } @else {
+                @for (bet of bets; track bet.id) {
+                  <tr>
+                    <td>{{ bet.event?.title || 'Partido Eliminado' }}</td>
+                    <td>${{ bet.amount | number: '1.2-2' }}</td>
+                    <td class="prediction">{{ predictionLabels[bet.prediction] || bet.prediction }}</td>
+                    <td>x{{ bet.odds | number: '1.2-2' }}</td>
+                    <td>
+                      <span class="badge"
+                        [class.badge-pending]="bet.status === 'pending'"
+                        [class.badge-won]="bet.status === 'won'"
+                        [class.badge-lost]="bet.status === 'lost'">
+                        {{ bet.status }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (bet.status === 'won') {
+                        <span class="profit-won">+${{ (bet.amount * bet.odds) | number: '1.2-2' }}</span>
+                      } @else if (bet.status === 'lost') {
+                        <span class="profit-lost">$0.00</span>
+                      } @else {
+                        <span class="profit-pending">Por calcular</span>
+                      }
+                    </td>
+                    @if (isAdmin()) {
+                      <td class="action-cell">
+                        @if (bet.status === 'pending') {
+                          <button class="btn-edit" (click)="openEditBet(bet)">Editar</button>
+                        }
+                        <button class="btn-delete" (click)="deleteBet(bet.id)">Eliminar</button>
+                      </td>
+                    }
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+@if (showBetModal && selectedEvent && selectedPrediction) {
+  <div class="modal-overlay" (click)="closeBetModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Confirmar Apuesta</h3>
+      <p><strong>{{ selectedEvent.title }}</strong></p>
+      <p>Predicción: <strong>{{ predictionLabels[selectedPrediction] }}</strong></p>
+      <p>Cuota: <strong>x{{ getSelectedOdds() | number: '1.2-2' }}</strong></p>
+      @if (betModalError) {
+        <div class="alert alert-error">{{ betModalError }}</div>
+      }
+      <div class="form-group">
+        <label>Monto ($)</label>
+        <input type="number" class="form-input" [(ngModel)]="betAmount" min="1" />
+      </div>
+      <p class="payout">Retorno potencial: <strong>${{ getPotentialPayout() | number: '1.2-2' }}</strong></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeBetModal()">Cancelar</button>
+        <button class="btn btn-primary" (click)="confirmBet()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showEditEventModal) {
+  <div class="modal-overlay" (click)="showEditEventModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Editar Evento</h3>
+      <div class="form-field">
+        <label class="field-label">Título del partido</label>
+        <input class="form-input" [(ngModel)]="editEvent.title" placeholder="Título" />
+      </div>
+      <div class="form-field">
+        <label class="field-label">Fecha y hora del partido</label>
+        <div class="datetime-parts">
+          <input type="number" min="1" max="31" class="form-input dt-input" [(ngModel)]="editEventDate.day" placeholder="DD" />
+          <span class="dt-sep">/</span>
+          <input type="number" min="1" max="12" class="form-input dt-input" [(ngModel)]="editEventDate.month" placeholder="MM" />
+          <span class="dt-sep">/</span>
+          <input type="number" min="2024" max="2100" class="form-input dt-input dt-year" [(ngModel)]="editEventDate.year" placeholder="AAAA" />
+          <span class="dt-sep dt-gap"></span>
+          <input type="number" min="0" max="23" class="form-input dt-input" [(ngModel)]="editEventDate.hour" placeholder="HH" />
+          <span class="dt-sep">:</span>
+          <input type="number" min="0" max="59" class="form-input dt-input" [(ngModel)]="editEventDate.minute" placeholder="mm" />
+        </div>
+      </div>
+      <span class="field-label odds-title">Cuotas (Odds)</span>
+      <div class="odds-row">
+        <div class="odds-field">
+          <label class="odds-label">Local (Home)</label>
+          <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="editEvent.oddsHome" />
+        </div>
+        <div class="odds-field">
+          <label class="odds-label">Empate (Draw)</label>
+          <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="editEvent.oddsDraw" />
+        </div>
+        <div class="odds-field">
+          <label class="odds-label">Visitante (Away)</label>
+          <input type="number" step="0.01" min="1" class="form-input" [(ngModel)]="editEvent.oddsAway" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showEditEventModal = false">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveEditEvent()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showEditBetModal) {
+  <div class="modal-overlay" (click)="showEditBetModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Editar Apuesta</h3>
+      <input type="number" class="form-input" [(ngModel)]="editBet.amount" placeholder="Monto" />
+      <select class="form-input" [(ngModel)]="editBet.prediction">
+        <option value="home">Local</option>
+        <option value="draw">Empate</option>
+        <option value="away">Visitante</option>
+      </select>
+      <input type="number" step="0.01" class="form-input" [(ngModel)]="editBet.odds" placeholder="Cuota" />
+      <select class="form-input" [(ngModel)]="editBet.status">
+        <option value="pending">Pendiente</option>
+        <option value="won">Ganada</option>
+        <option value="lost">Perdida</option>
+      </select>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="showEditBetModal = false">Cancelar</button>
+        <button class="btn btn-primary" (click)="saveEditBet()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}
