@@ -66,13 +66,38 @@
       <div class="bet-panel">
         <h3>Coloca tu apuesta</h3>
         <div class="quick-bets">
-          <button class="btn btn-secondary" (click)="setBet(10)">$10</button>
-          <button class="btn btn-secondary" (click)="setBet(25)">$25</button>
-          <button class="btn btn-secondary" (click)="setBet(50)">$50</button>
-          <button class="btn btn-secondary" (click)="setBet(100)">$100</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(10)">$10</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(25)">$25</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(50)">$50</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(100)">$100</button>
         </div>
-        <input type="number" class="form-input" [(ngModel)]="betAmount" />
-        <button class="btn btn-primary deal-btn" (click)="startGame()">Repartir 🃏</button>
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input"
+          [formControl]="betAmountControl"
+          placeholder="Monto entero"
+          [class.input-invalid]="betAmountControl.invalid && betAmountControl.touched"
+        />
+        @if (betAmountControl.invalid && betAmountControl.touched) {
+          <div class="field-error">
+            @if (betAmountControl.hasError('required')) {
+              <span>El monto de apuesta es obligatorio.</span>
+            } @else if (betAmountControl.hasError('pattern')) {
+              <span>Solo se permiten números enteros (0-9).</span>
+            } @else if (betAmountControl.hasError('min')) {
+              <span>La apuesta debe ser al menos 1.</span>
+            }
+          </div>
+        }
+        <button
+          type="button"
+          class="btn btn-primary deal-btn"
+          (click)="startGame()"
+          [disabled]="betAmountControl.invalid"
+        >
+          Repartir 🃏
+        </button>
       </div>
     }
 

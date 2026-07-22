@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavbarComponent } from '../../layout/navbar/navbar.component';
 import { AuthService } from '../../core/services/auth.service';
 import { CasinoService } from '../../core/services/casino.service';
@@ -18,10 +18,16 @@ const STATUS_MAP: Record<string, { text: string; css: string }> = {
   push: { text: 'Empate 🤝', css: 'push' },
 };
 
+const INTEGER_BET_VALIDATORS = [
+  Validators.required,
+  Validators.min(1),
+  Validators.pattern('^[0-9]*$'),
+];
+
 @Component({
   selector: 'app-blackjack',
   standalone: true,
-  imports: [NavbarComponent, FormsModule, DecimalPipe, DatePipe],
+  imports: [NavbarComponent, ReactiveFormsModule, DecimalPipe, DatePipe],
   templateUrl: './blackjack.component.html',
   styleUrl: './blackjack.component.scss',
 })
@@ -30,8 +36,11 @@ export class BlackjackComponent implements OnInit {
   private readonly casino = inject(CasinoService);
 
   readonly user = this.auth.currentUser;
+  readonly betAmountControl = new FormControl('10', {
+    nonNullable: true,
+    validators: INTEGER_BET_VALIDATORS,
+  });
 
-  betAmount = 10;
   game: BlackjackGame | null = null;
   history: BlackjackGame[] = [];
   error = '';
@@ -69,7 +78,8 @@ export class BlackjackComponent implements OnInit {
   }
 
   setBet(amount: number): void {
-    this.betAmount = amount;
+    this.betAmountControl.setValue(String(amount));
+    this.betAmountControl.markAsTouched();
   }
 
   getPlayerCards(): Card[] {
@@ -108,11 +118,14 @@ export class BlackjackComponent implements OnInit {
   }
 
   startGame(): void {
-    if (this.betAmount <= 0) {
-      this.showError('Ingresa un monto de apuesta válido.');
+    this.betAmountControl.markAsTouched();
+    if (this.betAmountControl.invalid) {
+      this.showError('Ingresa un monto de apuesta válido (solo enteros ≥ 1).');
       return;
     }
-    this.casino.blackjackStart(this.betAmount).subscribe({
+
+    const betAmount = Number(this.betAmountControl.value);
+    this.casino.blackjackStart(betAmount).subscribe({
       next: (res) => {
         this.hideBanner();
         this.renderGame(res.data);

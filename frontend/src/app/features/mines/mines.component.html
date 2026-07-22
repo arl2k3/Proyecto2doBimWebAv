@@ -43,17 +43,36 @@
       <div class="setup-panel">
         <h3>Configura tu partida</h3>
         <div class="quick-bets">
-          <button class="btn btn-secondary" (click)="setBet(5)">$5</button>
-          <button class="btn btn-secondary" (click)="setBet(10)">$10</button>
-          <button class="btn btn-secondary" (click)="setBet(25)">$25</button>
-          <button class="btn btn-secondary" (click)="setBet(50)">$50</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(5)">$5</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(10)">$10</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(25)">$25</button>
+          <button type="button" class="btn btn-secondary" (click)="setBet(50)">$50</button>
         </div>
-        <input type="number" class="form-input" [(ngModel)]="betAmount" placeholder="Apuesta" />
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input"
+          [formControl]="betAmountControl"
+          placeholder="Apuesta (entero)"
+          [class.input-invalid]="betAmountControl.invalid && betAmountControl.touched"
+        />
+        @if (betAmountControl.invalid && betAmountControl.touched) {
+          <div class="field-error">
+            @if (betAmountControl.hasError('required')) {
+              <span>El monto de apuesta es obligatorio.</span>
+            } @else if (betAmountControl.hasError('pattern')) {
+              <span>Solo se permiten números enteros (0-9).</span>
+            } @else if (betAmountControl.hasError('min')) {
+              <span>La apuesta debe ser al menos 1.</span>
+            }
+          </div>
+        }
         <div class="mine-selector">
           <span class="label">Número de minas:</span>
           <div class="mine-options">
             @for (n of mineOptions; track n) {
               <button
+                type="button"
                 class="mine-option"
                 [class.active]="minesCount === n"
                 (click)="selectMines(n)">
@@ -62,7 +81,14 @@
             }
           </div>
         </div>
-        <button class="btn btn-primary start-btn" (click)="startGame()">Iniciar 💣</button>
+        <button
+          type="button"
+          class="btn btn-primary start-btn"
+          (click)="startGame()"
+          [disabled]="betAmountControl.invalid"
+        >
+          Iniciar 💣
+        </button>
       </div>
     }
 

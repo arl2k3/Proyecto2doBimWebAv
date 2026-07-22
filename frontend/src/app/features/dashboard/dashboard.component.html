@@ -12,9 +12,34 @@
           <button class="btn btn-secondary" (click)="recharge(500)">+$500</button>
         </div>
         <div class="custom-recharge">
-          <input type="number" class="form-input" [(ngModel)]="customRecharge" placeholder="Monto personalizado" />
-          <button class="btn btn-success" (click)="rechargeCustom()">Cargar</button>
+          <input
+            type="text"
+            inputmode="numeric"
+            class="form-input"
+            [formControl]="customRechargeControl"
+            placeholder="Monto personalizado"
+            [class.input-invalid]="customRechargeControl.invalid && customRechargeControl.touched"
+          />
+          <button
+            type="button"
+            class="btn btn-success"
+            (click)="rechargeCustom()"
+            [disabled]="customRechargeControl.invalid"
+          >
+            Cargar
+          </button>
         </div>
+        @if (customRechargeControl.invalid && customRechargeControl.touched) {
+          <div class="field-error">
+            @if (customRechargeControl.hasError('required')) {
+              <span>El monto es obligatorio.</span>
+            } @else if (customRechargeControl.hasError('pattern')) {
+              <span>Solo se permiten números enteros (0-9).</span>
+            } @else if (customRechargeControl.hasError('min')) {
+              <span>El monto debe ser al menos 1.</span>
+            }
+          </div>
+        }
       </section>
 
       <section class="card link-card">
@@ -217,12 +242,37 @@
       }
       <div class="form-group">
         <label>Monto ($)</label>
-        <input type="number" class="form-input" [(ngModel)]="betAmount" min="1" />
+        <input
+          type="text"
+          inputmode="numeric"
+          class="form-input"
+          [formControl]="betAmountControl"
+          placeholder="Solo enteros"
+          [class.input-invalid]="betAmountControl.invalid && betAmountControl.touched"
+        />
+        @if (betAmountControl.invalid && betAmountControl.touched) {
+          <div class="field-error">
+            @if (betAmountControl.hasError('required')) {
+              <span>El monto de apuesta es obligatorio.</span>
+            } @else if (betAmountControl.hasError('pattern')) {
+              <span>Solo se permiten números enteros (0-9).</span>
+            } @else if (betAmountControl.hasError('min')) {
+              <span>La apuesta debe ser al menos 1.</span>
+            }
+          </div>
+        }
       </div>
       <p class="payout">Retorno potencial: <strong>${{ getPotentialPayout() | number: '1.2-2' }}</strong></p>
       <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="closeBetModal()">Cancelar</button>
-        <button class="btn btn-primary" (click)="confirmBet()">Confirmar</button>
+        <button type="button" class="btn btn-secondary" (click)="closeBetModal()">Cancelar</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="confirmBet()"
+          [disabled]="betAmountControl.invalid"
+        >
+          Confirmar
+        </button>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavbarComponent } from '../../layout/navbar/navbar.component';
 import { AuthService } from '../../core/services/auth.service';
 import { CasinoService } from '../../core/services/casino.service';
@@ -8,6 +8,12 @@ import { MinesGame } from '../../core/models';
 
 const GRID_SIZE = 25;
 const MINE_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15];
+
+const INTEGER_BET_VALIDATORS = [
+  Validators.required,
+  Validators.min(1),
+  Validators.pattern('^[0-9]*$'),
+];
 
 type CellState = 'hidden' | 'safe' | 'mine' | 'revealed-mine' | 'disabled';
 
@@ -19,7 +25,7 @@ interface GridCell {
 @Component({
   selector: 'app-mines',
   standalone: true,
-  imports: [NavbarComponent, FormsModule, DecimalPipe, DatePipe],
+  imports: [NavbarComponent, ReactiveFormsModule, DecimalPipe, DatePipe],
   templateUrl: './mines.component.html',
   styleUrl: './mines.component.scss',
 })
@@ -30,8 +36,11 @@ export class MinesComponent implements OnInit {
   readonly user = this.auth.currentUser;
   readonly mineOptions = MINE_OPTIONS;
   readonly gridSize = GRID_SIZE;
+  readonly betAmountControl = new FormControl('10', {
+    nonNullable: true,
+    validators: INTEGER_BET_VALIDATORS,
+  });
 
-  betAmount = 10;
   minesCount = 3;
   multiplier = 1;
   gameActive = false;
@@ -88,7 +97,8 @@ export class MinesComponent implements OnInit {
   }
 
   setBet(amount: number): void {
-    this.betAmount = amount;
+    this.betAmountControl.setValue(String(amount));
+    this.betAmountControl.markAsTouched();
   }
 
   get potentialWin(): number {
@@ -96,15 +106,16 @@ export class MinesComponent implements OnInit {
   }
 
   startGame(): void {
-    if (this.betAmount <= 0) {
-      this.showError('Ingresa una apuesta válida.');
+    this.betAmountControl.markAsTouched();
+    if (this.betAmountControl.invalid) {
+      this.showError('Ingresa una apuesta válida (solo enteros ≥ 1).');
       return;
     }
 
-    this.casino.minesStart(this.betAmount, this.minesCount).subscribe({
-      next: (res) => {
-        const game = res.data;
-        this.currentBet = this.betAmount;
+    const betAmount = Number(this.betAmountControl.value);
+    this.casino.minesStart(betAmount, this.minesCount).subscribe({
+      next: () => {
+        this.currentBet = betAmount;
         this.multiplier = 1;
         this.safeRevealed = 0;
         this.initGrid();

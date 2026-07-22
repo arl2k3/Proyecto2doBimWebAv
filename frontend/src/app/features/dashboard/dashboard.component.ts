@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DecimalPipe, DatePipe, UpperCasePipe } from '@angular/common';
 import { NavbarComponent } from '../../layout/navbar/navbar.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -16,10 +16,24 @@ interface DateParts {
   minute: number | null;
 }
 
+const INTEGER_AMOUNT_VALIDATORS = [
+  Validators.required,
+  Validators.min(1),
+  Validators.pattern('^[0-9]*$'),
+];
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [NavbarComponent, RouterLink, FormsModule, DecimalPipe, DatePipe, UpperCasePipe],
+  imports: [
+    NavbarComponent,
+    RouterLink,
+    FormsModule,
+    ReactiveFormsModule,
+    DecimalPipe,
+    DatePipe,
+    UpperCasePipe,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -30,6 +44,14 @@ export class DashboardComponent implements OnInit {
 
   readonly user = this.auth.currentUser;
   readonly isAdmin = this.auth.isAdmin;
+  readonly betAmountControl = new FormControl('', {
+    nonNullable: true,
+    validators: INTEGER_AMOUNT_VALIDATORS,
+  });
+  readonly customRechargeControl = new FormControl('', {
+    nonNullable: true,
+    validators: INTEGER_AMOUNT_VALIDATORS,
+  });
 
   events: BettingEvent[] = [];
   bets: Bet[] = [];
@@ -41,8 +63,6 @@ export class DashboardComponent implements OnInit {
   betModalError = '';
   selectedEvent: BettingEvent | null = null;
   selectedPrediction: 'home' | 'away' | 'draw' | null = null;
-  betAmount = 0;
-  customRecharge = 0;
 
   newEvent = { title: '', oddsHome: 2, oddsAway: 2, oddsDraw: 3 };
   newEventDate: DateParts = this.emptyDateParts();
@@ -98,16 +118,19 @@ export class DashboardComponent implements OnInit {
   }
 
   rechargeCustom(): void {
-    if (this.customRecharge > 0) {
-      this.recharge(this.customRecharge);
-      this.customRecharge = 0;
+    this.customRechargeControl.markAsTouched();
+    if (this.customRechargeControl.invalid) {
+      return;
     }
+    const amount = Number(this.customRechargeControl.value);
+    this.recharge(amount);
+    this.customRechargeControl.reset('');
   }
 
   openBetModal(event: BettingEvent, prediction: 'home' | 'away' | 'draw'): void {
     this.selectedEvent = event;
     this.selectedPrediction = prediction;
-    this.betAmount = 0;
+    this.betAmountControl.reset('');
     this.betModalError = '';
     this.showBetModal = true;
   }
@@ -116,6 +139,7 @@ export class DashboardComponent implements OnInit {
     this.showBetModal = false;
     this.selectedEvent = null;
     this.selectedPrediction = null;
+    this.betAmountControl.reset('');
   }
 
   getSelectedOdds(): number {
@@ -129,22 +153,28 @@ export class DashboardComponent implements OnInit {
   }
 
   getPotentialPayout(): number {
-    return this.betAmount * this.getSelectedOdds();
+    const amount = Number(this.betAmountControl.value);
+    if (!amount || this.betAmountControl.invalid) {
+      return 0;
+    }
+    return amount * this.getSelectedOdds();
   }
 
   confirmBet(): void {
     if (!this.selectedEvent || !this.selectedPrediction) return;
-    if (this.betAmount <= 0) {
-      this.betModalError = 'Ingrese un monto válido.';
+    this.betAmountControl.markAsTouched();
+    if (this.betAmountControl.invalid) {
+      this.betModalError = 'Ingrese un monto válido (solo enteros ≥ 1).';
       return;
     }
+    const betAmount = Number(this.betAmountControl.value);
     const balance = this.user()?.balance ?? 0;
-    if (this.betAmount > balance) {
+    if (betAmount > balance) {
       this.betModalError = 'Saldo insuficiente.';
       return;
     }
 
-    this.betting.placeBet(this.selectedEvent.id, this.betAmount, this.selectedPrediction).subscribe({
+    this.betting.placeBet(this.selectedEvent.id, betAmount, this.selectedPrediction).subscribe({
       next: () => {
         alert('Apuesta confirmada exitosamente!');
         this.closeBetModal();

@@ -126,6 +126,16 @@ a {
   &::placeholder {
     color: var(--text-muted);
   }
+
+  &.input-invalid {
+    border-color: #ef4444;
+  }
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 0.35rem;
 }
 
 .card {

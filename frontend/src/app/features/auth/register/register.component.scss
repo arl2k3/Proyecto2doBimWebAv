@@ -1,1 +1,12 @@
 @import '../login/login.component.scss';
+
+.field-error {
+  font-size: 0.75rem;
+  color: #f87171;
+  margin-top: 0.25rem;
+}
+
+.input-invalid {
+  border-color: #ef4444 !important;
+  outline-color: #ef4444;
+}
