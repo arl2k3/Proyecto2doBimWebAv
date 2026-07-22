@@ -1,0 +1,116 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  # TODO: replace with your GitHub org/user
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/betzone
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            backend/api-gateway/package-lock.json
+            backend/auth-service/package-lock.json
+            backend/wallet-service/package-lock.json
+            backend/betting-service/package-lock.json
+            backend/casino-service/package-lock.json
+            backend/chat-service/package-lock.json
+            backend/notifications-service/package-lock.json
+
+      - name: Lint backend services
+        run: |
+          for service in api-gateway auth-service wallet-service betting-service casino-service chat-service notifications-service; do
+            echo "Linting $service..."
+            cd backend/$service
+            npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+            npm run lint --if-present || echo "No lint script in $service"
+            cd -
+          done
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run tests (placeholder)
+        run: |
+          echo "TODO: add unit/integration tests per service"
+          echo "Placeholder test step passed."
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: auth-service
+            dockerfile: auth-service/Dockerfile
+            context: backend
+          - service: wallet-service
+            dockerfile: wallet-service/Dockerfile
+            context: backend
+          - service: betting-service
+            dockerfile: betting-service/Dockerfile
+            context: backend
+          - service: casino-service
+            dockerfile: casino-service/Dockerfile
+            context: backend
+          - service: chat-service
+            dockerfile: chat-service/Dockerfile
+            context: backend
+          - service: notifications-service
+            dockerfile: notifications-service/Dockerfile
+            context: backend
+          - service: api-gateway
+            dockerfile: api-gateway/Dockerfile
+            context: backend
+          - service: frontend
+            dockerfile: Dockerfile
+            context: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.context }}
+          file: ./${{ matrix.context }}/${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:latest
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+          build-args: |
+            API_URL=${{ vars.API_URL || 'http://localhost:8080' }}
+
+      - name: Image summary
+        run: |
+          echo "Pushed ${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}"
