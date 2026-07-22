@@ -1,0 +1,11 @@
+{
+  "name": "betzone-shared",
+  "version": "2.0.0",
+  "description": "BetZone shared middleware and utilities",
+  "private": true,
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "prom-client": "^15.1.3"
+  }
+}
